@@ -1,12 +1,15 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/signal"
 
-	_ "github.com/gwaycc/mdoc/route"
+	"github.com/gwaycc/mdoc/route"
+	"github.com/gwaycc/mdoc/tools/auth"
 
+	"github.com/gwaylib/errors"
 	"github.com/gwaylib/eweb"
 	"github.com/gwaylib/log"
 	"github.com/labstack/echo"
@@ -15,9 +18,17 @@ import (
 
 var e = eweb.Default()
 
+var authFlag = flag.Bool("auth-mode", false, "run the authentication mode")
+
 // Register router
 func init() {
 	e.Debug = os.Getenv("EWEB_MODE") != "release"
+	digestLogin := auth.NewDigestAuth("lib10")
+
+	// digest auth
+
+	// render
+	e.Renderer = eweb.GlobTemplate("./public/*.html")
 
 	// middle ware
 	e.Use(middleware.Gzip())
@@ -27,12 +38,26 @@ func init() {
 		return func(c echo.Context) error {
 			req := c.Request()
 			uri := req.URL.Path
+
+			route.DumpReq(req)
 			switch uri {
 			case "/check": // alive check
 				return c.String(200, "1")
+			case "/favicon.ico":
+				// continue
+			default:
+				if *authFlag {
+					// login check
+					username, err := digestLogin.CheckAuth(c.Response().Writer, req)
+					if err != nil {
+						if auth.ErrNeedPwd.Equal(err) {
+							log.Info(errors.As(err))
+						}
+						return nil
+					}
+					_ = username
+				}
 			}
-
-			// TODO: auth for login
 
 			// next route
 			return next(c)
@@ -44,6 +69,8 @@ func init() {
 }
 
 func main() {
+	flag.Parse()
+
 	// Start server
 	go func() {
 		httpAddr := ":8080"
