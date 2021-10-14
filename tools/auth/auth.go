@@ -58,16 +58,6 @@ func getAuthLimit(key string) int {
 	return val.(int)
 }
 
-func authPasswd(user, realm string) string {
-	if user == "john" {
-		// password is "hello"
-		//return "b98e16cbc3d01734b264adba7baa3bf9"
-		// return "5d41402abc4b2a76b9719d911017c592"
-		return "hello"
-	}
-	return ""
-}
-
 func realIp(r *http.Request) []string {
 	ips := []string{r.RemoteAddr}
 	ips = append(ips, r.Header["X-Forwarded-For"]...)
@@ -80,9 +70,16 @@ type DigestAuth struct {
 	mutex sync.Mutex
 }
 
-func NewDigestAuth(realm string) *DigestAuth {
-	da := httpauth.NewDigestAuthenticator(realm, authPasswd)
-	da.PlainTextSecrets = true
+// About SecretProvider
+//
+// plain text mode
+// provider need return plain text, example: "hello".
+//
+// hash mode
+// provider need return H(user + ":" + realm + ":" + passwd)
+func NewDigestAuth(realm string, plainTextSecret bool, secret httpauth.SecretProvider) *DigestAuth {
+	da := httpauth.NewDigestAuthenticator(realm, secret)
+	da.PlainTextSecrets = plainTextSecret
 	return &DigestAuth{
 		DigestAuth: da,
 	}

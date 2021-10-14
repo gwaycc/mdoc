@@ -18,12 +18,29 @@ import (
 
 var e = eweb.Default()
 
-var authFlag = flag.Bool("auth-mode", false, "run the authentication mode")
+var (
+	authFlag   = flag.Bool("auth-mode", true, "run the authentication mode")
+	dbFileFlag = flag.String("db-file", "./data/mdoc.db", "where db file to storage")
+)
+
+func authPasswd(user, realm string) string {
+	uInfo, err := auth.GetUser(user)
+	if err != nil {
+		if errors.ErrNoData.Equal(err) {
+			return ""
+		}
+		log.Warn(errors.As(err, user, realm))
+		return ""
+	}
+	return uInfo.Passwd
+}
 
 // Register router
 func init() {
 	e.Debug = os.Getenv("EWEB_MODE") != "release"
-	digestLogin := auth.NewDigestAuth("lib10")
+
+	auth.InitDB(*dbFileFlag)
+	digestLogin := auth.NewDigestAuth("lib10", true, authPasswd)
 
 	// digest auth
 
