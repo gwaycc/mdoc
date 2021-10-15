@@ -73,7 +73,7 @@ func init() {
 				// web server
 				var e = eweb.Default()
 				e.Debug = os.Getenv("EWEB_MODE") != "release"
-				e.Renderer = eweb.GlobTemplate("./public/*.html")
+				e.Renderer = eweb.GlobTemplate(filepath.Join(repoDir, "public", "*.html"))
 
 				// middle ware
 				e.Use(middleware.Gzip())
