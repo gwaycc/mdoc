@@ -21,7 +21,7 @@ passwd is 'hello', see tools/auth/auth_test.go#TestHashPasswd
 ```
 sudo apt-get install sqlite3
 sqlite3 ./data/mdoc.db
-INSERT INTO user_info(id,`passwd`,nick_name,memo)VALUES('admin','7628d9fbecd3683d02276b6176b0ee13','admin','system init');
+INSERT INTO user_info(id,`passwd`,nick_name,kind,memo)VALUES('admin','7628d9fbecd3683d02276b6176b0ee13','admin',1,'system init');
 .q
 
 # modify the passwd
