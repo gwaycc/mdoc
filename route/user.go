@@ -3,6 +3,7 @@ package route
 import (
 	"github.com/gwaycc/mdoc/tools/auth"
 
+	httpauth "github.com/abbot/go-http-auth"
 	"github.com/gwaylib/errors"
 	"github.com/gwaylib/eweb"
 	"github.com/gwaylib/log"
@@ -15,7 +16,30 @@ func init() {
 	e.POST("/user/pwd/reset", UserPwdReset)
 }
 
+func isAdminLogin(c echo.Context) bool {
+	// checksum admin auth
+	authParams := httpauth.DigestAuthParams(c.Request().Header.Get("Authorization"))
+	if authParams == nil {
+		return false
+	}
+	admin, err := auth.GetUser(authParams["username"])
+	if err != nil {
+		if !errors.ErrNoData.Equal(err) {
+			log.Warn(errors.As(err))
+		}
+		return false
+	}
+	if admin.Kind != auth.USER_KIND_ADMIN {
+		return false
+	}
+	return true
+}
+
 func UserAdd(c echo.Context) error {
+	if !isAdminLogin(c) {
+		return c.String(403, "you don't have admin auth")
+	}
+
 	username := FormValue(c, "username")
 	passwd := FormValue(c, "passwd")
 	nickName := FormValue(c, "nickname")
@@ -43,6 +67,10 @@ func UserAdd(c echo.Context) error {
 }
 
 func UserPwdReset(c echo.Context) error {
+	if !isAdminLogin(c) {
+		return c.String(403, "you don't have admin auth")
+	}
+
 	username := FormValue(c, "username")
 	passwd := FormValue(c, "passwd")
 	if err := auth.ResetPwd(username, passwd); err != nil {

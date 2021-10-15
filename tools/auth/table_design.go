@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS user_info (
 	updated_at DATETIME NOT NULL DEFAULT (datetime('now', 'localtime')),
 	passwd TEXT NOT NULL,
 	nick_name TEXT NOT NULL DEFAULT '',
+	kind INT NOT NULL DEFAULT 2, -- 1, admin; 2, users.
 	memo TEXT NOT NULL DEFAULT ''
 );`
 )

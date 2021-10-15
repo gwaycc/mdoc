@@ -54,20 +54,17 @@ func init() {
 				authPasswd := func(user, realm string) string {
 					pwd, ok := auth.GetAuthCache(user)
 					if ok {
-						fmt.Println("get from cache", pwd)
 						return pwd
 					}
 
 					uInfo, err := auth.GetUser(user)
 					if err != nil {
 						if errors.ErrNoData.Equal(err) {
-							fmt.Println("user not found")
 							return ""
 						}
 						log.Warn(errors.As(err, user, realm))
 						return ""
 					}
-					fmt.Println("get from db ", uInfo.Passwd)
 					auth.UpdateAuthCache(user, uInfo.Passwd)
 					return uInfo.Passwd
 				}
