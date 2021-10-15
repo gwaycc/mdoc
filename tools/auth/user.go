@@ -27,3 +27,11 @@ func GetUser(username string) (*UserInfo, error) {
 	}
 	return uInfo, nil
 }
+
+func ResetPwd(username, passwd string) error {
+	db := GetDB()
+	if _, err := db.Exec("UPDATE user_info set passwd=? WHERE id=?", passwd, username); err != nil {
+		return errors.As(err, username)
+	}
+	return nil
+}

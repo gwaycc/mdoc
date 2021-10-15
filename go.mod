@@ -12,5 +12,7 @@ require (
 	github.com/gwaylib/log v0.0.0-20210507100943-24bc495476d8
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/mattn/go-sqlite3 v1.14.8 // indirect
+	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
+	github.com/urfave/cli/v2 v2.3.0 // indirect
 )

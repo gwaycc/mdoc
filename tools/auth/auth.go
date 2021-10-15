@@ -2,8 +2,11 @@ package auth
 
 import (
 	"fmt"
+	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -11,6 +14,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/gwaycc/mdoc/tools/cache"
 	"github.com/gwaylib/errors"
+)
+
+const (
+	REALM = "mdoc"
 )
 
 var (
@@ -64,6 +71,10 @@ func realIp(r *http.Request) []string {
 	return ips
 }
 
+func HashPasswd(user, realm, passwd string) string {
+	return httpauth.H(fmt.Sprintf("%s:%s:%s", user, realm, passwd))
+}
+
 type DigestAuth struct {
 	*httpauth.DigestAuth
 
@@ -90,21 +101,21 @@ func (da *DigestAuth) CheckAuth(writer http.ResponseWriter, req *http.Request) (
 	username := ""
 
 	// auth for loginedet/url
-	loginCookie, _ := req.Cookie("login")
-	if loginCookie != nil && loginCookie.Expires.Before(time.Now()) {
-		val, err := url.ParseQuery(loginCookie.Value)
-		if err == nil {
-			// has login by token
-			username = val.Get("username")
-			token := val.Get("token")
-
-			if verifyAuthToken(username, token) {
-				// verify token pass
-				updateAuthToken(username, token)
-				return username, nil
-			}
-		}
-	}
+	//loginCookie, _ := req.Cookie("login")
+	//if loginCookie != nil && loginCookie.Expires.Before(time.Now()) {
+	//	val, err := url.ParseQuery(loginCookie.Value)
+	//	if err == nil {
+	//		// has login by token
+	//		username = val.Get("username")
+	//		token := val.Get("token")
+	//
+	//		if verifyAuthToken(username, token) {
+	//			// verify token pass
+	//			updateAuthToken(username, token)
+	//			return username, nil
+	//		}
+	//	}
+	//}
 	auth := httpauth.DigestAuthParams(req.Header.Get(da.Headers.V().Authorization))
 	if auth != nil {
 		username = auth["username"]
@@ -147,4 +158,55 @@ func (da *DigestAuth) CheckAuth(writer http.ResponseWriter, req *http.Request) (
 	})
 
 	return username, nil
+}
+
+func readHttpResp(resp *http.Response) string {
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err.Error()
+	}
+	return string(body)
+}
+func AuthReq(server, uri, adminUser, adminPwd string, params url.Values) error {
+	authResp, err := http.Head(server + uri)
+	if err != nil {
+		return errors.As(err)
+	}
+	defer authResp.Body.Close()
+	if authResp.StatusCode != 401 {
+		return errors.New(fmt.Sprintf("%d", authResp.StatusCode)).As(readHttpResp(authResp))
+	}
+
+	authParams := httpauth.DigestAuthParams(authResp.Header.Get("Www-Authenticate"))
+	nonce := authParams["nonce"]
+	opaque := authParams["opaque"]
+	qop := authParams["qop"]
+	//algorithm := authParams["algorithm"]
+	realm := authParams["realm"]
+	nc := fmt.Sprintf("%08d", rand.Intn(99999999))
+	cnonce := fmt.Sprintf("%016x", rand.Intn(99999999))
+
+	req, err := http.NewRequest("POST", server+uri, strings.NewReader(params.Encode()))
+	if err != nil {
+		return errors.As(err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", fmt.Sprintf(`Digest username="%s", realm="%s", nonce="%s", uri="%s", algorithm=MD5, response="%s", opaque="%s", qop=%s, nc=%s, cnonce="%s"`,
+		adminUser, realm, nonce, uri,
+		httpauth.H(strings.Join([]string{
+			httpauth.H(adminUser + ":" + realm + ":" + adminPwd),
+			nonce, nc, cnonce, qop,
+			httpauth.H("POST:" + uri),
+		}, ":")),
+		opaque, qop, nc, cnonce,
+	))
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return errors.As(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return errors.New(fmt.Sprintf("%d", resp.StatusCode)).As(readHttpResp(resp))
+	}
+	return nil
 }

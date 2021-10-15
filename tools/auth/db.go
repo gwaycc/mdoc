@@ -34,7 +34,7 @@ func InitDB(dbFile string) {
 		panic(err)
 	}
 
-	log.Infof("Init sqlite db at:%s", dbFile)
+	log.Infof("Init sqlite db: %s", dbFile)
 	db, err := database.Open(database.DRV_NAME_SQLITE3, fmt.Sprintf("file:%s?_loc=auto&_mode=rwc&_journal_mode=WAL&cache=shared&encoding=UTF-8&_timeout=10000", dbFile))
 	if err != nil {
 		panic(err)
@@ -59,7 +59,7 @@ func GetDB() *database.DB {
 	mdblk.Lock()
 	defer mdblk.Unlock()
 	if mdb == nil {
-		panic("Need InitDB at first")
+		panic("DB didn't init")
 	}
 	return mdb
 }
