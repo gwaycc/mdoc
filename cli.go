@@ -50,7 +50,7 @@ func init() {
 				repoDir := repo.ExpandPath(cctx.String("repo"))
 
 				// digest auth
-				auth.InitDB(filepath.Join(repoDir, "mdoc.db"))
+				auth.InitDB(filepath.Join(repoDir, "data", "mdoc.db"))
 				authPasswd := func(user, realm string) string {
 					pwd, ok := auth.GetAuthCache(user)
 					if ok {
@@ -125,7 +125,7 @@ func init() {
 				})
 
 				// static file
-				e.Static("/", "./public")
+				e.Static("/", filepath.Join(repoDir, "public"))
 
 				// Start server
 				go func() {

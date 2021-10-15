@@ -16,8 +16,8 @@ var app = &cmd.App{
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "repo",
-				Value: "./data",
-				Usage: "data repo",
+				Value: "./",
+				Usage: "repo of root project",
 			},
 		},
 	},
