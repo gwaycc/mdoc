@@ -5,16 +5,16 @@ Online server tool to made markdown document.
 ## No authentication
 ```shell
 go build
-./mdoc daemon --auth-mode=false # TODO
+./mdoc daemon --auth-mode=false
 ```
-more help run "./mdoc --help"  
-then open http://localhost:8080 in browser.
+Then open http://localhost:8080 in browser.
 
 ## Authentication(Default mode)
 ```shell
 go build
 ./mdoc daemon --auth-mode=true
 ```
+Then open http://localhost:8080 in browser.  
 
 ## Set a admin account for login
 Open another console, add a user to sqlite db.  
@@ -31,8 +31,6 @@ INSERT INTO user_info(id,`passwd`,nick_name,kind,memo)VALUES('admin','7628d9fbec
 # add a new user
 ./mdoc user --url=http://localhost:8080 --admin-user=admin --admin-pwd=<newpasswd> add --username=newone --passwd=<newpasswd>
 ```
-more help run "./mdoc --help"  
-then open http://localhost:8080 in browser.
 
 ## For release
 ```shell
@@ -43,5 +41,8 @@ sudo cp -r public /mnt/data/markdown
 mdoc --repo=/mnt/data/markdown daemon --listen=:8080
 ```
 
+
 ## BUG:  
 User need to login again by the opaque was changed when the server has been restart, maybe use redis to fixed this problem.
+
+More help run "./mdoc --help"  
