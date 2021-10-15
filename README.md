@@ -6,15 +6,15 @@ Online server tool to made markdown document.
 ```shell
 go build
 ./mdoc daemon --auth-mode=false
+# Then open http://localhost:8080 in browser.
 ```
-Then open http://localhost:8080 in browser.
 
 ## Authentication(Default mode)
 ```shell
 go build
 ./mdoc daemon --auth-mode=true
+# Then open http://localhost:8080 in browser.  
 ```
-Then open http://localhost:8080 in browser.  
 
 ## Set a admin account for login
 Open another console, add a user to sqlite db.  
