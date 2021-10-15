@@ -18,7 +18,7 @@ go build
 
 ## Set a admin account for login
 Open another console, add a user to sqlite db.  
-passwd is 'hello', see tools/auth/auth_test.go#TestHashPasswd
+The default password is 'hello', see [TestHashPasswd](tools/auth/auth_test.go#TestHashPasswd)
 ```
 sudo apt-get install sqlite3
 sqlite3 ./data/mdoc.db
