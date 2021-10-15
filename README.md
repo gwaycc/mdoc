@@ -16,6 +16,7 @@ go build
 ./mdoc daemon --auth-mode=true
 ```
 
+## Set a admin account for login
 Open another console, add a user to sqlite db.  
 passwd is 'hello', see tools/auth/auth_test.go#TestHashPasswd
 ```
@@ -25,13 +26,22 @@ INSERT INTO user_info(id,`passwd`,nick_name,kind,memo)VALUES('admin','7628d9fbec
 .q
 
 # modify the passwd
-./mdoc user --admin-user=admin --admin-pwd=hello reset --username=admin --passwd=<newpasswd>
+./mdoc user --url=http://localhost:8080 --admin-user=admin --admin-pwd=hello reset --username=admin --passwd=<newpasswd>
 
 # add a new user
-./mdoc user --admin-user=admin --admin-pwd=<newpasswd> add --username=newone --passwd=<newpasswd>
+./mdoc user --url=http://localhost:8080 --admin-user=admin --admin-pwd=<newpasswd> add --username=newone --passwd=<newpasswd>
 ```
 more help run "./mdoc --help"  
 then open http://localhost:8080 in browser.
 
-BUG:  
+## For release
+```shell
+go build
+sudo mkdir /mnt/data/markdown
+sudo cp mdoc /usr/local/bin
+sudo cp -r public /mnt/data/markdown
+mdoc --repo=/mnt/data/markdown daemon --listen=:8080
+```
+
+## BUG:  
 User need to login again by the opaque was changed when the server has been restart, maybe use redis to fixed this problem.
