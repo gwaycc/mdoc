@@ -72,7 +72,7 @@ func init() {
 						req := c.Request()
 						uri := req.URL.Path
 
-						route.DumpReq(req)
+						//route.DumpReq(req)
 						switch uri {
 						case "/check": // alive check
 							return c.String(200, "1")
