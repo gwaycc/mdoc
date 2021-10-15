@@ -26,10 +26,10 @@ INSERT INTO user_info(id,`passwd`,nick_name,kind,memo)VALUES('admin','7628d9fbec
 .q
 
 # modify the passwd
-/mdoc user --admin-user=admin --admin-pwd=hello reset --username=admin --passwd=<newpasswd>
+./mdoc user --url=http://localhost:8080 --admin-user=admin --admin-pwd=hello reset --username=admin --passwd=<newpasswd>
 
 # add a new user
-./mdoc user --admin-user=admin --admin-pwd=<newpasswd> add --username=newone --passwd=<newpasswd>
+./mdoc user --url=http://localhost:8080 --admin-user=admin --admin-pwd=<newpasswd> add --username=newone --passwd=<newpasswd>
 ```
 more help run "./mdoc --help"  
 then open http://localhost:8080 in browser.
