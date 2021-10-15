@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"path/filepath"
 
+	"github.com/gwaycc/mdoc/route"
 	"github.com/gwaycc/mdoc/tools/auth"
 	"github.com/gwaycc/mdoc/tools/repo"
 
@@ -24,6 +25,11 @@ func init() {
 		&cli.Command{
 			Name: "daemon",
 			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:  "dump",
+					Value: false,
+					Usage: "dump the request header",
+				},
 				&cli.BoolFlag{
 					Name:  "auth-mode",
 					Value: true,
@@ -48,17 +54,20 @@ func init() {
 				authPasswd := func(user, realm string) string {
 					pwd, ok := auth.GetAuthCache(user)
 					if ok {
+						fmt.Println("get from cache", pwd)
 						return pwd
 					}
 
 					uInfo, err := auth.GetUser(user)
 					if err != nil {
 						if errors.ErrNoData.Equal(err) {
+							fmt.Println("user not found")
 							return ""
 						}
 						log.Warn(errors.As(err, user, realm))
 						return ""
 					}
+					fmt.Println("get from db ", uInfo.Passwd)
 					auth.UpdateAuthCache(user, uInfo.Passwd)
 					return uInfo.Passwd
 				}
@@ -73,12 +82,15 @@ func init() {
 				e.Use(middleware.Gzip())
 
 				// filter
+				dump := cctx.Bool("dump")
 				e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 					return func(c echo.Context) error {
 						req := c.Request()
 						uri := req.URL.Path
+						if dump {
+							route.DumpReq(req)
+						}
 
-						//route.DumpReq(req)
 						switch uri {
 						case "/check": // alive check
 							return c.String(200, "1")
@@ -87,12 +99,24 @@ func init() {
 						default:
 							if authMode {
 								// login check
-								username, err := digestLogin.CheckAuth(c.Response().Writer, req)
-								if err != nil {
-									if auth.ErrNeedPwd.Equal(err) {
-										log.Info(errors.As(err))
-									}
+								username, err := digestLogin.CheckAuth(req)
+								switch {
+								case auth.ErrNeedLogin.Equal(err):
+									digestLogin.RequireAuth(c.Response().Writer, req)
 									return nil
+								case auth.ErrNeedPwd.Equal(err):
+									log.Info(errors.As(err))
+									digestLogin.RequireAuth(c.Response().Writer, req)
+									return nil
+								case auth.ErrReject.Equal(err):
+									return c.String(403, auth.ErrReject.Code())
+								default:
+									if err != nil {
+										log.Warn(errors.As(err))
+										return c.String(500, "unknow error")
+									}
+
+									// login success
 								}
 								_ = username
 							}

@@ -32,3 +32,6 @@ INSERT INTO user_info(id,`passwd`,nick_name,memo)VALUES('admin','7628d9fbecd3683
 ```
 more help run "./mdoc --help"  
 then open http://localhost:8080 in browser.
+
+BUG:  
+User need to login again by the opaque was changed when the server has been restart, maybe use redis to fixed this problem.

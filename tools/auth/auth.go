@@ -21,6 +21,7 @@ const (
 var (
 	ErrNeedLogin = errors.New("Need login")
 	ErrNeedPwd   = errors.New("Passwd failed")
+	ErrReject    = errors.New("Too many login failures")
 )
 
 // TODO: store to redis if need.
@@ -98,14 +99,13 @@ func NewDigestAuth(realm string, plainTextSecret bool, secret httpauth.SecretPro
 }
 
 // rebuild httpauth.DigestAuth.CheckAuth
-func (da *DigestAuth) CheckAuth(writer http.ResponseWriter, req *http.Request) (string, error) {
+func (da *DigestAuth) CheckAuth(req *http.Request) (string, error) {
 	username := ""
 	auth := httpauth.DigestAuthParams(req.Header.Get(da.Headers.V().Authorization))
 	if auth != nil {
 		username = auth["username"]
 	}
 	if len(username) == 0 {
-		da.RequireAuth(writer, req)
 		return "", ErrNeedLogin.As("need username")
 	}
 
@@ -113,20 +113,19 @@ func (da *DigestAuth) CheckAuth(writer http.ResponseWriter, req *http.Request) (
 	limitKey := fmt.Sprintf("%s_%+v", username, realIp(req))
 	errTimes := getAuthLimit(limitKey)
 	if errTimes > _AUTH_LIMIT_TIMES {
-		writer.WriteHeader(403)
-		writer.Write([]byte(fmt.Sprintf("Too many login failures: %d", errTimes)))
-		return username, errors.New("Too many login failures").As(limitKey, errTimes)
+		return "", ErrReject.As(limitKey, errTimes)
 	}
 
 	// do login with password
-	username, _ = da.DigestAuth.CheckAuth(req)
-	if len(username) == 0 {
+	_, info := da.DigestAuth.CheckAuth(req)
+	if info == nil {
 		// auth failed
 		updateAuthLimit(limitKey, errTimes+1)
-		da.RequireAuth(writer, req)
-		return "", ErrNeedPwd.As(username)
+		return "", ErrNeedPwd.As(auth)
 	}
 
+	// clean the errTimes when success
+	updateAuthLimit(limitKey, 0)
 	return username, nil
 }
 
