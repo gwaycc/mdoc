@@ -12,7 +12,7 @@ import (
 func init() {
 	e := eweb.Default()
 	e.POST("/user/add", UserAdd)
-	e.POST("/user/pwd", UserPwd)
+	e.POST("/user/pwd/reset", UserPwdReset)
 }
 
 func UserAdd(c echo.Context) error {
@@ -42,12 +42,13 @@ func UserAdd(c echo.Context) error {
 	return c.String(200, "OK")
 }
 
-func UserPwd(c echo.Context) error {
+func UserPwdReset(c echo.Context) error {
 	username := FormValue(c, "username")
 	passwd := FormValue(c, "passwd")
 	if err := auth.ResetPwd(username, passwd); err != nil {
 		log.Warn(errors.As(err))
 		return c.String(500, "System interval error")
 	}
+	auth.DelAuthCache(username)
 	return c.String(200, "OK")
 }

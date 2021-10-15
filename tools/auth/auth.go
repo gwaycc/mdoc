@@ -8,10 +8,8 @@ import (
 	"net/url"
 	"strings"
 	"sync"
-	"time"
 
 	httpauth "github.com/abbot/go-http-auth"
-	"github.com/google/uuid"
 	"github.com/gwaycc/mdoc/tools/cache"
 	"github.com/gwaylib/errors"
 )
@@ -37,16 +35,19 @@ const (
 	_AUTH_EXPIRES_DAYS = 7
 )
 
-func updateAuthToken(username, token string) {
+func UpdateAuthCache(username, token string) {
 	authCache.Put(fmt.Sprintf(_AUTH_TOKEN_HEAD, username), token, 3600*24*_AUTH_EXPIRES_DAYS)
 }
 
-func verifyAuthToken(username, token string) bool {
+func GetAuthCache(username string) (string, bool) {
 	cacheToken := authCache.Get(fmt.Sprintf(_AUTH_TOKEN_HEAD, username))
 	if cacheToken == nil {
-		return false
+		return "", false
 	}
-	return cacheToken.(string) == token
+	return cacheToken.(string), true
+}
+func DelAuthCache(username string) {
+	authCache.Delete(fmt.Sprintf(_AUTH_TOKEN_HEAD, username))
 }
 
 func updateAuthLimit(key string, value int) {
@@ -99,23 +100,6 @@ func NewDigestAuth(realm string, plainTextSecret bool, secret httpauth.SecretPro
 // rebuild httpauth.DigestAuth.CheckAuth
 func (da *DigestAuth) CheckAuth(writer http.ResponseWriter, req *http.Request) (string, error) {
 	username := ""
-
-	// auth for loginedet/url
-	//loginCookie, _ := req.Cookie("login")
-	//if loginCookie != nil && loginCookie.Expires.Before(time.Now()) {
-	//	val, err := url.ParseQuery(loginCookie.Value)
-	//	if err == nil {
-	//		// has login by token
-	//		username = val.Get("username")
-	//		token := val.Get("token")
-	//
-	//		if verifyAuthToken(username, token) {
-	//			// verify token pass
-	//			updateAuthToken(username, token)
-	//			return username, nil
-	//		}
-	//	}
-	//}
 	auth := httpauth.DigestAuthParams(req.Header.Get(da.Headers.V().Authorization))
 	if auth != nil {
 		username = auth["username"]
@@ -142,20 +126,6 @@ func (da *DigestAuth) CheckAuth(writer http.ResponseWriter, req *http.Request) (
 		da.RequireAuth(writer, req)
 		return "", ErrNeedPwd.As(username)
 	}
-
-	// login success
-	// write the token to the cookie
-	loginToken := uuid.New().String()
-	updateAuthToken(username, loginToken)
-	cookiesVal := url.Values{
-		"username": []string{username},
-		"token":    []string{loginToken},
-	}
-	http.SetCookie(writer, &http.Cookie{
-		Name:    "login",
-		Value:   cookiesVal.Encode(),
-		Expires: time.Now().AddDate(0, 0, _AUTH_EXPIRES_DAYS),
-	})
 
 	return username, nil
 }

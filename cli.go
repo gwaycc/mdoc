@@ -1,12 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
 
-	"github.com/gwaycc/mdoc/route"
 	"github.com/gwaycc/mdoc/tools/auth"
 	"github.com/gwaycc/mdoc/tools/repo"
 
@@ -46,6 +46,11 @@ func init() {
 				// digest auth
 				auth.InitDB(filepath.Join(repoDir, "mdoc.db"))
 				authPasswd := func(user, realm string) string {
+					pwd, ok := auth.GetAuthCache(user)
+					if ok {
+						return pwd
+					}
+
 					uInfo, err := auth.GetUser(user)
 					if err != nil {
 						if errors.ErrNoData.Equal(err) {
@@ -54,6 +59,7 @@ func init() {
 						log.Warn(errors.As(err, user, realm))
 						return ""
 					}
+					auth.UpdateAuthCache(user, uInfo.Passwd)
 					return uInfo.Passwd
 				}
 				digestLogin := auth.NewDigestAuth(auth.REALM, false, authPasswd)
@@ -210,7 +216,7 @@ func init() {
 							"passwd":   {auth.HashPasswd(username, auth.REALM, passwd)},
 						}
 						if err := auth.AuthReq(
-							cctx.String("url"), "/user/pwd",
+							cctx.String("url"), "/user/pwd/reset",
 							cctx.String("admin-user"), cctx.String("admin-pwd"),
 							params); err != nil {
 							return errors.As(err)
