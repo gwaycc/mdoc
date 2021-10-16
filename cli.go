@@ -94,7 +94,7 @@ func init() {
 						switch uri {
 						case "/check": // alive check
 							return c.String(200, "1")
-						case "/favicon.ico", "/":
+						case "/favicon.ico", "", "/":
 							// continue
 						default:
 							if authMode && !ignAuth.Match(uri) {

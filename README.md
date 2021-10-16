@@ -41,6 +41,21 @@ sudo cp -r public /mnt/data/markdown
 mdoc --repo=/mnt/data/markdown daemon --listen=:8080
 ```
 
+## Hybrid authentication
+Using "repo/.authignore" can do hybrid authentication.
+
+Example in the .authignore file of demo will be ignore authentication:
+```
+/*.html
+/*.js
+/*.js.map
+/js
+/*.css
+/css
+/robot.txt
+/markdown/README.md
+/markdown/doc
+```
 
 ## BUG:  
 User need to login again by the opaque was changed when the server has been restart, maybe use redis to fixed this problem.

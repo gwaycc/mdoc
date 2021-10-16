@@ -68,8 +68,18 @@ func getAuthLimit(key string) int {
 }
 
 func realIp(r *http.Request) []string {
-	ips := []string{r.RemoteAddr}
-	ips = append(ips, r.Header["X-Forwarded-For"]...)
+	ips := []string{}
+	addrInfo := strings.Split(r.RemoteAddr, ":")
+	if len(addrInfo) > 0 {
+		ips = append(ips, addrInfo[0])
+	}
+
+	for _, header := range r.Header["X-Forwarded-For"] {
+		addrInfo := strings.Split(header, ":")
+		if len(addrInfo) > 0 {
+			ips = append(ips, addrInfo[0])
+		}
+	}
 	return ips
 }
 
