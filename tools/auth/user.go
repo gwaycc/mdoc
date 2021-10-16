@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"time"
+
 	"github.com/gwaylib/database"
 	"github.com/gwaylib/errors"
 )
@@ -39,7 +41,7 @@ func GetUser(username string) (*UserInfo, error) {
 
 func ResetPwd(username, passwd string) error {
 	db := GetDB()
-	if _, err := db.Exec("UPDATE user_info set passwd=? WHERE id=?", passwd, username); err != nil {
+	if _, err := db.Exec("UPDATE user_info set passwd=?,updated_at=? WHERE id=?", passwd, time.Now(), username); err != nil {
 		return errors.As(err, username)
 	}
 	return nil
