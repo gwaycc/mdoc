@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"os/signal"
@@ -69,6 +70,8 @@ func init() {
 					return uInfo.Passwd
 				}
 				digestLogin := auth.NewDigestAuth(auth.REALM, false, authPasswd)
+				ignore, _ := ioutil.ReadFile(filepath.Join(repoDir, ".authignore"))
+				ignAuth := auth.ParseIgnoreAuth(ignore)
 
 				// web server
 				var e = eweb.Default()
@@ -91,10 +94,10 @@ func init() {
 						switch uri {
 						case "/check": // alive check
 							return c.String(200, "1")
-						case "/favicon.ico":
+						case "/favicon.ico", "", "/":
 							// continue
 						default:
-							if authMode {
+							if authMode && !ignAuth.Match(uri) {
 								// login check
 								username, err := digestLogin.CheckAuth(req)
 								switch {
